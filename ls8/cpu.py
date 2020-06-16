@@ -17,6 +17,9 @@ class CPU:
             "LDI":0x82,
             "PRN": 0x47
         }
+        self.branch_table = {
+            
+        }
 
     def ram_read(self, addr):
         return self.ram[addr]
@@ -27,23 +30,35 @@ class CPU:
     def load(self):
         """Load a program into memory."""
 
-        address = 0
+        # address = 0
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010,  # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111,  # PRN R0
+        #     0b00000000,
+        #     0b00000001,  # HLT
+        # ]
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
+        filename = sys.argv[1]
+        with open(filename) as f:
+            address = 0
+            for line in f:
+                line = line.split('#')
+                try:
+                    v = int(line[0], 2)
+                except ValueError:
+                    continue
+                # memory[address] = v
+                self.ram_write(address, v)
+                address+= 1
 
     def hlt(self):
         sys.exit(1)
@@ -93,7 +108,7 @@ class CPU:
                 self.hlt()
                 break
             elif self.ir == self.instructions['LDI']:
-                self.ldi(self.read_ram(self.pc + 1, self.pc + 2))
+                self.ldi(self.ram_read(self.pc + 1), self.ram_read(self.pc + 2))
             elif self.ir == self.instructions['PRN']:
                 self.prn(self.ram_read(self.pc + 1))
 
