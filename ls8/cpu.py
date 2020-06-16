@@ -13,12 +13,14 @@ class CPU:
         self.pc = 0
         self.ir = 0x00
         self.instructions = {
-            "HLT":0x01,
-            "LDI":0x82,
+            "HLT": 0x01,
+            "LDI": 0x82,
             "PRN": 0x47
         }
         self.branch_table = {
-            
+            0x01: self.hlt,
+            0x82: self.ldi,
+            0x47: self.prn
         }
 
     def ram_read(self, addr):
@@ -29,24 +31,6 @@ class CPU:
 
     def load(self):
         """Load a program into memory."""
-
-        # address = 0
-
-        # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010,  # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111,  # PRN R0
-        #     0b00000000,
-        #     0b00000001,  # HLT
-        # ]
-
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
         filename = sys.argv[1]
         with open(filename) as f:
             address = 0
@@ -56,19 +40,18 @@ class CPU:
                     v = int(line[0], 2)
                 except ValueError:
                     continue
-                # memory[address] = v
                 self.ram_write(address, v)
-                address+= 1
+                address += 1
 
     def hlt(self):
         sys.exit(1)
         self.pc = self.pc + 1
-    
+
     def ldi(self, reg, i):
         self.reg[reg] = i
         self.pc = self.pc + 3
-    
-    def prn(self, reg):
+
+    def prn(self, reg, b=None):
         print(self.reg[reg])
         self.pc = self.pc + 2
 
@@ -107,13 +90,6 @@ class CPU:
             if self.ir == self.instructions['HLT']:
                 self.hlt()
                 break
-            elif self.ir == self.instructions['LDI']:
-                self.ldi(self.ram_read(self.pc + 1), self.ram_read(self.pc + 2))
-            elif self.ir == self.instructions['PRN']:
-                self.prn(self.ram_read(self.pc + 1))
-
-            
-            
-
-            
-
+            a = self.ram_read(self.pc + 1)
+            b = self.ram_read(self.pc + 2)
+            self.branch_table[self.ir](a, b)
