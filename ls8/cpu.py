@@ -20,9 +20,17 @@ class CPU:
         self.branch_table = {
             0x01: self.hlt,
             0x82: self.ldi,
-            0x47: self.prn
+            0x47: self.prn,
+            0xA2: self.mul
         }
 
+    def mul(self, a, b):
+        self.alu('MUL', a, b)
+        self.pc = self.pc + 3
+        
+    def add(self, a, b):
+        self.alu('ADD', a, b)
+        
     def ram_read(self, addr):
         return self.ram[addr]
 
@@ -57,10 +65,10 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        # elif op == "SUB": etc
+        if op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -69,7 +77,6 @@ class CPU:
         Handy function to print out the CPU state. You might want to call this
         from run() if you need help debugging.
         """
-
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.pc,
             # self.fl,
