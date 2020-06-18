@@ -12,6 +12,9 @@ class CPU:
         self.running = True
         self.pc = 0
         self.ir = 0x00
+        self.reg[7] = 0xf4
+        self.sp = self.reg[7]
+
         self.instructions = {
             "HLT": 0x01,
             "LDI": 0x82,
@@ -21,16 +24,33 @@ class CPU:
             0x01: self.hlt,
             0x82: self.ldi,
             0x47: self.prn,
-            0xA2: self.mul
+            0xA2: self.mul,
+            0x46: self.pop,
+            0x45: self.push
         }
+
+    def push(self, a):
+        # Decrement sp, add value at new position in memory
+        self.sp -= 1
+        reg_index = self.ram_read(self.pc+1)
+        value = self.reg[reg_index]
+        self.ram_write(self.sp, value)
+        self.pc += 2
+
+    def pop(self, a=None):
+        value = self.ram_read(self.sp)
+        reg_index = self.ram_read(self.pc + 1)
+        self.reg[reg_index] = value
+        self.sp += 1
+        self.pc += 2
 
     def mul(self, a, b):
         self.alu('MUL', a, b)
         self.pc = self.pc + 3
-        
+
     def add(self, a, b):
         self.alu('ADD', a, b)
-        
+
     def ram_read(self, addr):
         return self.ram[addr]
 
@@ -96,7 +116,18 @@ class CPU:
             self.ir = self.ram_read(self.pc)
             if self.ir == self.instructions['HLT']:
                 self.hlt()
-                break
+                return
+
             a = self.ram_read(self.pc + 1)
             b = self.ram_read(self.pc + 2)
-            self.branch_table[self.ir](a, b)
+
+            params = self.ir >> 6
+            if self.ir in self.branch_table:
+                if params == 0:
+                    self.branch_table[self.ir]()
+                elif params == 1:
+                    self.branch_table[self.ir](a)
+                else:
+                    self.branch_table[self.ir](a, b)
+            else:
+                pass
