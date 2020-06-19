@@ -440,7 +440,6 @@ Machine code:
 10000011 00000aaa 00000bbb
 83 0a 0b
 ```
-
 ### LDI
 
 `LDI register immediate`
