@@ -40,17 +40,18 @@ class CPU:
 
     def jne(self, reg_index):
         if self.fl & 0b00000001 == 0:
-            self.pc = self.reg[reg_index]
+            self.jmp(reg_index)
         else:
             self.pc += 2 
 
     def cmpr(self, a, b):
         self.alu('CMP', a, b)
-        self.pc = self.pc + 3
+        # self.pc = self.pc + 3
 
     def jeq(self, reg_index):
         if self.fl & 0b00000001 == 1:
-            self.pc = self.reg[reg_index]
+            # self.pc = self.reg[reg_index]
+            self.jmp(reg_index)
         else:
             self.pc += 2
 
@@ -86,22 +87,22 @@ class CPU:
         reg_index = self.ram_read(self.pc+1)
         value = self.reg[reg_index]
         self.ram_write(self.sp, value)
-        self.pc += 2
+        # self.pc += 2
 
     def pop(self, a=None):
         value = self.ram_read(self.sp)
         reg_index = self.ram_read(self.pc + 1)
         self.reg[reg_index] = value
         self.sp += 1
-        self.pc += 2
+        # self.pc += 2
 
     def mul(self, a, b):
         self.alu('MUL', a, b)
-        self.pc = self.pc + 3
+        # self.pc = self.pc + 3
 
     def add(self, a, b):
         self.alu('ADD', a, b)
-        self.pc += 3
+        # self.pc += 3
 
     def ram_read(self, addr):
         return self.ram[addr]
@@ -125,15 +126,15 @@ class CPU:
 
     def hlt(self):
         sys.exit(1)
-        self.pc = self.pc + 1
+        # self.pc = self.pc + 1
 
     def ldi(self, reg, i):
         self.reg[reg] = i
-        self.pc = self.pc + 3
+        # self.pc = self.pc + 3
 
     def prn(self, reg, b=None):
         print(self.reg[reg])
-        self.pc = self.pc + 2
+        # self.pc = self.pc + 2
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -182,6 +183,7 @@ class CPU:
 
             params = self.ir >> 6
             if self.ir in self.branch_table:
+                print('Good IR', "{0:b}".format(self.ir))
                 if params == 0:
                     self.branch_table[self.ir]()
                 elif params == 1:
@@ -189,5 +191,10 @@ class CPU:
                 else:
                     self.branch_table[self.ir](a, b)
             else:
-                print("Bad IR", self.ir)
+                print("Bad IR", "{0:b}".format(self.ir))
                 pass
+            
+            fifth_bit = self.ir & 0b00010000
+            changes_pc = fifth_bit >> 4
+            if not changes_pc:
+                self.pc += params + 1
