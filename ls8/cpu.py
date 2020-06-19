@@ -31,31 +31,50 @@ class CPU:
             0x45: self.push,
             0x50: self.call,
             0x11: self.ret,
-            0x54: self.jmp
+            0x54: self.jmp,
+            0x55: self.jeq,
+            0xA7: self.cmpr,
+            0b10100000: self.add
         }
+
+    # def add(self, a, b):
+    #     self.alu("ADD", a, b)
+    #     self.pc += 3
+    def cmpr(self, a, b):
+        self.alu('CMP', a, b)
+        self.pc = self.pc + 3
+
+    def jeq(self, reg_index):
+        if self.fl == 0b00000001:
+            self.pc = self.reg[reg_index]
+        else:
+            self.pc += 1
 
     def jmp(self, reg_index):
         self.pc = self.reg[reg_index]
-    
+
     def ret(self):
         # Ret pops the return_addr off the stack, and sets self.pc to it
-        return_addr = self.ram_read(self.sp) # reference return addr to set pc to it
-        self.pc = return_addr # set pc to return addr, so that next subroutine is executed
-        self.sp += 1 # Increment sp since we are poping stack
-        
+        # reference return addr to set pc to it
+        return_addr = self.ram_read(self.sp)
+        self.pc = return_addr  # set pc to return addr, so that next subroutine is executed
+        self.sp += 1  # Increment sp since we are poping stack
 
-    def call(self, a = None):
+    def call(self, a=None):
         # The call instruction places the address of where we will be after this call is returned
         # onto the stack. It then makes the program counter point to the current subroutine
         return_addr = self.pc + 2
 
-        self.sp -= 1 # Decrement sp to grow stack
-        self.ram_write(self.sp, return_addr) # place return address on top of stack
+        self.sp -= 1  # Decrement sp to grow stack
+        # place return address on top of stack
+        self.ram_write(self.sp, return_addr)
 
-        reg_index = self.ram_read(self.pc + 1) # The instruction set comes with the register that contains addr of current subr
-        subr_addr = self.reg[reg_index] # Reference that address
+        # The instruction set comes with the register that contains addr of current subr
+        reg_index = self.ram_read(self.pc + 1)
+        subr_addr = self.reg[reg_index]  # Reference that address
 
-        self.pc = subr_addr # This happens instead of incrementing, since instruction set contained subr addr
+        # This happens instead of incrementing, since instruction set contained subr addr
+        self.pc = subr_addr
 
     def push(self, a):
         # Decrement sp, add value at new position in memory
@@ -78,6 +97,7 @@ class CPU:
 
     def add(self, a, b):
         self.alu('ADD', a, b)
+        self.pc += 3
 
     def ram_read(self, addr):
         return self.ram[addr]
@@ -115,9 +135,9 @@ class CPU:
         """ALU operations."""
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        if op == "MUL":
+        elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
-        if op == "CMP":
+        elif op == "CMP":
             if reg_a > reg_b:
                 self.fl = 0b00000010
             elif reg_a == reg_b:
@@ -125,7 +145,7 @@ class CPU:
             elif reg_a < reg_b:
                 self.fl = 0b00000100
         else:
-            raise Exception("Unsupported ALU operation")
+            raise Exception("Unsupported ALU operation", op)
 
     def trace(self):
         """
@@ -158,6 +178,7 @@ class CPU:
 
             params = self.ir >> 6
             if self.ir in self.branch_table:
+                print('Good IR', self.ir)
                 if params == 0:
                     self.branch_table[self.ir]()
                 elif params == 1:
@@ -165,4 +186,5 @@ class CPU:
                 else:
                     self.branch_table[self.ir](a, b)
             else:
+                print("Bad IR", self.ir)
                 pass
