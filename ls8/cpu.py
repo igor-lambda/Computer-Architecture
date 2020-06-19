@@ -34,21 +34,25 @@ class CPU:
             0x54: self.jmp,
             0x55: self.jeq,
             0xA7: self.cmpr,
+            0x56: self.jne,
             0b10100000: self.add
         }
 
-    # def add(self, a, b):
-    #     self.alu("ADD", a, b)
-    #     self.pc += 3
+    def jne(self, reg_index):
+        if self.fl & 0b00000001 == 0:
+            self.pc = self.reg[reg_index]
+        else:
+            self.pc += 2 
+
     def cmpr(self, a, b):
         self.alu('CMP', a, b)
         self.pc = self.pc + 3
 
     def jeq(self, reg_index):
-        if self.fl == 0b00000001:
+        if self.fl & 0b00000001 == 1:
             self.pc = self.reg[reg_index]
         else:
-            self.pc += 1
+            self.pc += 2
 
     def jmp(self, reg_index):
         self.pc = self.reg[reg_index]
@@ -178,7 +182,6 @@ class CPU:
 
             params = self.ir >> 6
             if self.ir in self.branch_table:
-                print('Good IR', self.ir)
                 if params == 0:
                     self.branch_table[self.ir]()
                 elif params == 1:
