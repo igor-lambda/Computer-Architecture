@@ -13,7 +13,9 @@ class CPU:
         self.pc = 0
         self.ir = 0x00
         self.reg[7] = 0xf4
+        self.reg[6] = 0b00000000
         self.sp = self.reg[7]
+        self.fl = self.reg[6]
 
         self.instructions = {
             "HLT": 0x01,
@@ -26,8 +28,30 @@ class CPU:
             0x47: self.prn,
             0xA2: self.mul,
             0x46: self.pop,
-            0x45: self.push
+            0x45: self.push,
+            0x50: self.call,
+            0x11: self.ret
         }
+    
+    def ret(self):
+        # Ret pops the return_addr off the stack, and sets self.pc to it
+        return_addr = self.ram_read(self.sp) # reference return addr to set pc to it
+        self.pc = return_addr # set pc to return addr, so that next subroutine is executed
+        self.sp += 1 # Increment sp since we are poping stack
+        
+
+    def call(self, a = None):
+        # The call instruction places the address of where we will be after this call is returned
+        # onto the stack. It then makes the program counter point to the current subroutine
+        return_addr = self.pc + 2
+
+        self.sp -= 1 # Decrement sp to grow stack
+        self.ram_write(self.sp, return_addr) # place return address on top of stack
+
+        reg_index = self.ram_read(self.pc + 1) # The instruction set comes with the register that contains addr of current subr
+        subr_addr = self.reg[reg_index] # Reference that address
+
+        self.pc = subr_addr # This happens instead of incrementing, since instruction set contained subr addr
 
     def push(self, a):
         # Decrement sp, add value at new position in memory
@@ -89,6 +113,13 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         if op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        if op == "CMP":
+            if reg_a > reg_b:
+                self.fl = 0b00000010
+            elif reg_a == reg_b:
+                self.fl = 0b00000001
+            elif reg_a < reg_b:
+                self.fl = 0b00000100
         else:
             raise Exception("Unsupported ALU operation")
 
