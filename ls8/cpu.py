@@ -30,8 +30,12 @@ class CPU:
             0x46: self.pop,
             0x45: self.push,
             0x50: self.call,
-            0x11: self.ret
+            0x11: self.ret,
+            0x54: self.jmp
         }
+
+    def jmp(self, reg_index):
+        self.pc = self.reg[reg_index]
     
     def ret(self):
         # Ret pops the return_addr off the stack, and sets self.pc to it
